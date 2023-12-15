@@ -1,7 +1,7 @@
 importScripts("marchingCubes.js")
 
 var points = []
-var gridSize = 100
+var gridSize = 10
 
 var cTriangles = []
 let s = 1
