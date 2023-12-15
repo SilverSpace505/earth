@@ -154,7 +154,7 @@ class Webgl {
 
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-        mat4.perspective(projection, fov * Math.PI / 180, gl.canvas.width / gl.canvas.height, 0.0001, 5000)
+        mat4.perspective(projection, fov * Math.PI / 180, gl.canvas.width / gl.canvas.height, 0.01, 5000)
 
         gl.enable(gl.DEPTH_TEST)
     }
@@ -753,6 +753,56 @@ class Webgl {
 				if (this.ignoreFog) {
 					gl.uniform1f(webgl.uniforms.rDistance, webgl.rDistance)
 				}
+            }
+        }
+    }
+    get Sphere() {
+        return class extends webgl.Mesh {
+            radius = 0
+            colour = [0, 0, 0]
+            res = 30
+            constructor(x, y, z, radius, colour) {
+                super(x, y, z, 1, 1, 1, [], [], [])
+                this.radius = radius
+                this.colour = colour
+                this.updateMesh()
+                this.updateBuffers()
+            }
+            updateMesh() {
+                this.vertices = []
+                this.faces = []
+                this.colours = []
+                for (let lat = 0; lat <= this.res; lat++) {
+                    const theta = (lat * Math.PI) / this.res;
+                    const sinTheta = Math.sin(theta)
+                    const cosTheta = Math.cos(theta)
+
+                    for (let lon = 0; lon <= this.res; lon++) {
+                        const phi = (lon * 2 * Math.PI) / this.res
+                        const sinPhi = Math.sin(phi)
+                        const cosPhi = Math.cos(phi)
+
+                        const x = cosPhi * sinTheta
+                        const y = cosTheta
+                        const z = sinPhi * sinTheta
+
+                        this.vertices.push(this.radius * x, this.radius * y, this.radius * z)
+
+                        let normal = normalv3({x:x, y:y, z:z})
+
+                        let ld = normalv3(lightD)
+                        let light = Math.max(0.1, Math.min(1, normal.x*ld.x+normal.y*ld.y+normal.z*ld.z))
+
+                        this.colours.push(this.colour[0]*light, this.colour[1]*light, this.colour[2]*light)
+                    }
+                }
+                for (let lat = 0; lat < this.res; lat++) {
+                    for (let lon = 0; lon < this.res; lon++) {
+                        const first = lat * (this.res + 1) + lon
+                        const second = first + this.res + 1
+                        this.faces.push(first, second, first + 1, second, second + 1, first + 1)
+                    }
+                }
             }
         }
     }
