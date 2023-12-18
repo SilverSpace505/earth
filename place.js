@@ -22,7 +22,7 @@ var camera = {pos: {x: 0, y: 0, z: 0}, rot: {x: 0, y: 0, z: 0}}
 var test = new webgl.Box(0, 0, -1, 1, 1, 1, [1, 1, 1, 1])
 
 var sea = new webgl.Sphere(45, 45, 45, 37.5, [0, 0.5, 1])
-sea.alpha = 0.7
+sea.alpha = 0.5
 sea.order = true
 
 // var atmosphere = new webgl.Sphere(45, 45, 45, 60, [0, 0.5, 1])
@@ -75,6 +75,7 @@ function intWeights(v1, w1, v2, w2) {
     return v1 + t * (v2 - v1)
 }
 
+var cTriangles = []
 let s = 1
 let smoothing = true
 
@@ -97,10 +98,6 @@ function genChunk(x, y, z) {
                 z3 = z*cs+z2
                 let center = (Math.sin(x3/30)+1)/2 * ((Math.sin(y3/30)+1)/2) * ((Math.sin(z3/30)+1)/2)/1.25
                 let v = center + noise.simplex3(x3/40, y3/40, z3/40)/10 + noise.simplex3(x3/10, y3/10, z3/10)/50
-
-                if (noise.simplex3(x3/20, y3/20, z3/20) > 0.2) {
-                    v = 0
-                }
                 
                 let c = [0.5, 1, 0]
                 if (center > 0.6) {
@@ -228,48 +225,35 @@ function getMesh(chunk) {
                         [edges[triangles[i+1]][0]+pos[0]*cs, edges[triangles[i+1]][1]+pos[1]*cs, edges[triangles[i+1]][2]+pos[2]*cs], 
                         [edges[triangles[i+2]][0]+pos[0]*cs, edges[triangles[i+2]][1]+pos[1]*cs, edges[triangles[i+2]][2]+pos[2]*cs]
                     ]
-                    cTriangles.push([
-                        [edges[triangles[i]][0]+pos[0]*cs, edges[triangles[i]][1]+pos[1]*cs, edges[triangles[i]][2]+pos[2]*cs], 
-                        [edges[triangles[i+1]][0]+pos[0]*cs, edges[triangles[i+1]][1]+pos[1]*cs, edges[triangles[i+1]][2]+pos[2]*cs], 
-                        [edges[triangles[i+2]][0]+pos[0]*cs, edges[triangles[i+2]][1]+pos[1]*cs, edges[triangles[i+2]][2]+pos[2]*cs]
-                    ])
+                    cTriangles.push(wpos)
 
                     mesh.faces.push(mesh.vertices.length/3-3, mesh.vertices.length/3-2, mesh.vertices.length/3-1)
 
-                    let ld = normalizeVector([-lightD.x, -lightD.y, -lightD.z])
-                    // let ld2 = normalizeVector([-lightD.x, -lightD.y, -lightD.z])
+                    // let fr = 1
+                    // let poses2 = [
+                    //     [Math.round(edges[triangles[i]][0]*fr)/fr, Math.round(edges[triangles[i]][1]*fr)/fr, Math.round(edges[triangles[i]][2]*fr)/fr],
+                    //     [Math.round(edges[triangles[i+1]][0]*fr)/fr, Math.round(edges[triangles[i+1]][1]*fr)/fr, Math.round(edges[triangles[i+1]][2]*fr)/fr],
+                    //     [Math.round(edges[triangles[i+2]][0]*fr)/fr, Math.round(edges[triangles[i+2]][1]*fr)/fr, Math.round(edges[triangles[i+2]][2]*fr)/fr]
+                    // ]
+                    // let fn = normalizeVector(calculateFaceNormal([edges[triangles[i]], edges[triangles[i+1]], edges[triangles[i+2]]]))
+                    // // let fn = normalizeVector(calculateFaceNormal([poses2[0], poses2[1], poses2[2]]))
 
-                    // let fn = calculateFaceNormal([edges[triangles[i]], edges[triangles[i+1]], edges[triangles[i+2]]])
-                    // let ns = interpolateNormals([edges[triangles[i]], edges[triangles[i+1]], edges[triangles[i+2]]])
+                    // let ns = calculateVertexNormals([edges[triangles[i]], edges[triangles[i+1]], edges[triangles[i+2]]], fn)
 
-                    // let m1 = 0.1
-                    // let m2 = 0.9
-                    // let l1 = dotProduct(ns[0], ld)//*m1 + dotProduct(normalizeVector(computeGradient(wpos[0][0], wpos[0][1], wpos[0][2])), ld2)*m2
-                    // let l2 = dotProduct(ns[1], ld)//*m1 + dotProduct(normalizeVector(computeGradient(wpos[1][0], wpos[1][1], wpos[1][2])), ld2)*m2
-                    // let l3 = dotProduct(ns[2], ld)//*m1 + dotProduct(normalizeVector(computeGradient(wpos[2][0], wpos[2][1], wpos[2][2])), ld2)*m2
+                    // let ld = normalizeVector([lightD.x, lightD.y, lightD.z])
+                    
+                    // let l1 = dotProduct(ns[0], ld)
+                    // let l2 = dotProduct(ns[1], ld)
+                    // let l3 = dotProduct(ns[2], ld)
 
-                    let l1 = dotProduct(normalizeVector(computeGradient(wpos[0][0], wpos[0][1], wpos[0][2])), ld)
-                    let l2 = dotProduct(normalizeVector(computeGradient(wpos[1][0], wpos[1][1], wpos[1][2])), ld)
-                    let l3 = dotProduct(normalizeVector(computeGradient(wpos[2][0], wpos[2][1], wpos[2][2])), ld)
+                    let div = 100
+                    let l1 = Math.sqrt((wpos[0][0] - 50)**2 + (wpos[0][1] - 50)**2 + (wpos[0][2] - 50))/div
+                    let l2 = Math.sqrt((wpos[1][0] - 50)**2 + (wpos[1][1] - 50)**2 + (wpos[1][2] - 50))/div
+                    let l3 = Math.sqrt((wpos[2][0] - 50)**2 + (wpos[2][1] - 50)**2 + (wpos[2][2] - 50))/div
 
-                    // let cr = 3
-                    // l1 = Math.round(l1*cr)/cr
-                    // l2 = Math.round(l2*cr)/cr
-                    // l3 = Math.round(l3*cr)/cr
-
-                    let div = 125
-                    l1 *= Math.sqrt((wpos[0][0] - 50)**2 + (wpos[0][1] - 50)**2 + (wpos[0][2] - 50)**2)/div
-                    l2 *= Math.sqrt((wpos[1][0] - 50)**2 + (wpos[1][1] - 50)**2 + (wpos[1][2] - 50)**2)/div
-                    l3 *= Math.sqrt((wpos[2][0] - 50)**2 + (wpos[2][1] - 50)**2 + (wpos[2][2] - 50)**2)/div
-
-                    let s = 3
-                    l1 += (noise.simplex3(wpos[0][0]/s, wpos[0][1]/s, wpos[0][2]/s)+1)/2 / 15
-                    l2 += (noise.simplex3(wpos[1][0]/s, wpos[1][1]/s, wpos[1][2]/s)+1)/2 / 15
-                    l3 += (noise.simplex3(wpos[2][0]/s, wpos[2][1]/s, wpos[2][2]/s)+1)/2 / 15
-
-                    if (l1 < 0 || !l1) l1 = 0
-                    if (l2 < 0 || !l2) l2 = 0
-                    if (l3 < 0 || !l3) l3 = 0
+                    if (l1 < 0) l1 = 0
+                    if (l2 < 0) l2 = 0
+                    if (l3 < 0) l3 = 0
 
                     l1 += 0.25
                     l2 += 0.25
@@ -279,13 +263,14 @@ function getMesh(chunk) {
                     if (l2 > 1) l2 = 1
                     if (l3 > 1) l3 = 1
 
-                    let c1 = getVT(wpos[0][0], wpos[0][1], wpos[0][2])[1]
-                    let c2 = getVT(wpos[1][0], wpos[1][1], wpos[1][2])[1]
-                    let c3 = getVT(wpos[2][0], wpos[2][1], wpos[2][2])[1]
+                    // let cr = 4
+                    // l1 = Math.round(l1*cr)/cr
+                    // l2 = Math.round(l2*cr)/cr
+                    // l3 = Math.round(l3*cr)/cr
 
-                    mesh.colours.push(c1[0]*l1, c1[1]*l1, c1[2]*l1)
-                    mesh.colours.push(c2[0]*l2, c2[1]*l2, c2[2]*l2)
-                    mesh.colours.push(c3[0]*l3, c3[1]*l3, c3[2]*l3)
+                    mesh.colours.push(0.5*l1, 1*l1, 0*l1)
+                    mesh.colours.push(0.5*l2, 1*l2, 0*l2)
+                    mesh.colours.push(0.5*l3, 1*l3, 0*l3)
 
                 }
             }
@@ -467,7 +452,7 @@ function update(timestamp) {
 
 setInterval(() => {
     let start = new Date().getTime()
-    if (window.keys && keys["KeyE"]) console.log("To Render:", toMesh.length)
+    console.log(toMesh.length)
     while (toMesh.length > 0 && new Date().getTime() - start < 1000/60) {
         if (poses.includes(toMesh[0])) {
             meshChunk(toMesh[0])
@@ -501,7 +486,7 @@ function raycast(pos, dir) {
     let solves = []
     for (let chunk in world) {
         for (let triangle of world[chunk].triangles) {
-            r = findIntersection(triangle, [pos.x, pos.y, pos.z], [pos.x+dir.x*1000, pos.y+dir.y*1000, pos.z+dir.z*1000])
+            r = intersectTriangleLine(triangle, [pos.x, pos.y, pos.z], [pos.x+dir.x*1000, pos.y+dir.y*1000, pos.z+dir.z*1000])
             if (r) {
                 solves.push([r, Math.sqrt((pos.x-r[0])**2 + (pos.y-r[1])**2 + (pos.z-r[2])**2)])
             }
@@ -520,7 +505,7 @@ function isColliding() {
         for (let triangle of world[chunk].triangles) {
             let center = divv3(addv3(addv3({x:triangle[0][0], y:triangle[0][1], z:triangle[0][2]}, {x:triangle[1][0], y:triangle[1][1], z:triangle[1][2]}), {x:triangle[2][0], y:triangle[2][1], z:triangle[2][2]}), {x:3,y:3,z:3})
             if (Math.sqrt((camera.pos.x-center.x)**2 + (camera.pos.z-center.z)**2) < 5) {
-                if (findIntersection(triangle, [camera.pos.x, camera.pos.y, camera.pos.z], [camera.pos.x, camera.pos.y+1000, camera.pos.z])) {
+                if (intersectTriangleLine(triangle, [camera.pos.x, camera.pos.y, camera.pos.z], [camera.pos.x, camera.pos.y+1, camera.pos.z])) {
                     collisions++
                 }
             }
@@ -534,10 +519,6 @@ function subtractVectors(a, b) {
     return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }
 
-function addVectors(a, b) {
-    return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-}
-
 function crossProduct(a, b) {
     return [
         a[1] * b[2] - a[2] * b[1],
@@ -546,15 +527,11 @@ function crossProduct(a, b) {
     ];
 }
 
-function dotProduct(a, b) {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
 function scaleVector(v, s) {
     return [v[0] * s, v[1] * s, v[2] * s];
 }
 
-function findIntersection(triangle, lineStart, lineEnd) {
+function intersectTriangleLine(triangle, lineStart, lineEnd) {
     const [v0, v1, v2] = triangle;
 
     const e1 = subtractVectors(v1, v0);
@@ -585,7 +562,7 @@ function findIntersection(triangle, lineStart, lineEnd) {
     const t = f * dotProduct(e2, q);
 
     if (t > 1e-6) {
-        const intersectionPoint = addVectors(scaleVector(lineStart, 1 - t), scaleVector(lineEnd, t))
+        const intersectionPoint = subtractVectors(scaleVector(lineStart, 1 - t), scaleVector([-lineEnd[0], -lineEnd[1], -lineEnd[2]], t))
         return intersectionPoint;
     }
 
@@ -629,6 +606,11 @@ function subtractVectors(v1, v2) {
     return [v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]];
 }
 
+// Function to calculate the dot product of two vectors
+function dotProduct(v1, v2) {
+    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+}
+
 // Function to multiply a vector by a scalar
 function multiplyVectorByScalar(v, scalar) {
     return [v[0] * scalar, v[1] * scalar, v[2] * scalar];
@@ -638,6 +620,15 @@ function multiplyVectorByScalar(v, scalar) {
 function normalizeVector(v) {
     let length = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     return [v[0] / length, v[1] / length, v[2] / length];
+}
+
+// Function to calculate the cross product of two vectors
+function crossProduct(a, b) {
+    return {
+        x: a[1] * b[2] - a[2] * b[1],
+        y: a[2] * b[0] - a[0] * b[2],
+        z: a[0] * b[1] - a[1] * b[0],
+    };
 }
 
 // Function to calculate the normal of a face given its vertices
@@ -661,16 +652,16 @@ function calculateFaceNormal(vertices) {
   
     // Normalize the face normal
     const length = Math.sqrt(
-      faceNormal[0] ** 2 +
-      faceNormal[1] ** 2 +
-      faceNormal[2] ** 2
+      faceNormal.x ** 2 +
+      faceNormal.y ** 2 +
+      faceNormal.z ** 2
     );
   
-    faceNormal[0] /= length;
-    faceNormal[1] /= length;
-    faceNormal[2] /= length;
+    faceNormal.x /= length;
+    faceNormal.y /= length;
+    faceNormal.z /= length;
   
-    return faceNormal
+    return [faceNormal.x, faceNormal.y, faceNormal.z];
 }
 
 // Function to calculate vertex normals
@@ -719,36 +710,4 @@ function calculateVertexNormals(vertices, faceNormal) {
     }
   
     return vertexNormals;
-}
-
-function computeGradient(x, y, z, epsilon=1) {
-    const dx = (getV(x + epsilon, y, z) - getV(x - epsilon, y, z)) / (2 * epsilon);
-    const dy = (getV(x, y + epsilon, z) - getV(x, y - epsilon, z)) / (2 * epsilon);
-    const dz = (getV(x, y, z + epsilon) - getV(x, y, z - epsilon)) / (2 * epsilon);
-
-    return [dx, dy, dz];
-}
-
-// Function to interpolate normals across the vertices of a face
-function interpolateNormals(vertices) {
-    const v0 = vertices[0];
-    const v1 = vertices[1];
-    const v2 = vertices[2];
-
-    let mid = [
-        (v0[0] + v1[0] + v2[0])/3,
-        (v0[1] + v1[1] + v2[1])/3,
-        (v0[2] + v1[2] + v2[2])/3
-    ]
-
-    // Calculate face normal
-    const faceNormal = normalizeVector(crossProduct(subtractVectors(v1, v0), subtractVectors(v2, v0)));
-
-    // Interpolate normals across the vertices
-    const interpolatedNormals = vertices.map(vertex => {
-        const weightedNormal = normalizeVector(addVectors(faceNormal, subtractVectors(vertex, mid)));
-        return weightedNormal;
-    });
-
-    return interpolatedNormals;
 }
