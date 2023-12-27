@@ -220,7 +220,10 @@ class Webgl {
 			mesh.render()
 		}
 	}
+	qRender() {
+		if (!window.mat4) return
 
+	}
 	update() {
 		this.updateView = JSON.stringify(view) != JSON.stringify(this.lastView)
 		this.lastView = {...view}
@@ -301,6 +304,7 @@ class Webgl {
 			ignoreFog = false
 			originalFaces = []
             alpha = 1
+			customModel = null
 			constructor(x, y, z, width, height, depth, vertices, faces, colours) {
 				this.pos = {x: x, y: y, z: z}
 				this.size = {x: width, y: height, z: depth}
@@ -459,7 +463,12 @@ class Webgl {
 					this.orderCooldown = 1
 					this.orderFaces()
 				}
-				let model = this.getModel()
+				let model
+				if (this.customModel) {
+					model = this.customMOdel
+				} else {
+					model = this.getModel()
+				}
 
 				if (this.updateTextures) {
 					// this.updateTextures = false

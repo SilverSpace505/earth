@@ -1,3 +1,3 @@
 
 var cs = 10
-var rd = 5
+var rd = 4
