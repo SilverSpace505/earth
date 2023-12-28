@@ -390,6 +390,8 @@ var grav = {x: 0, y: 1, z: 0}
 var forwardAxis = [0, 0, 1]
 var lastPlayerRotY = 0
 
+var players = {}
+
 function update(timestamp) {
     requestAnimationFrame(update)
 
@@ -400,6 +402,25 @@ function update(timestamp) {
     let pcp = {x: Math.floor(camera.pos.x / cs), y: Math.floor(camera.pos.y / cs), z: Math.floor(camera.pos.z / cs)}
 
     let start = new Date().getTime()
+
+    for (let player in playerData) {
+        if (!(player in players) && player != id) {
+            players[player] = new webgl.Sphere(0, 0, 0, 0.5, [1, 0, 0])
+        }
+    }
+    for (let player in players) {
+        if (!(player in playerData)) {
+            players[player].delete()
+            delete players[player]
+        }
+    }
+
+    for (let player in players) {
+        players[player].pos.x = lerp(players[player].pos.x, playerData[player].x, delta*10)
+        players[player].pos.y = lerp(players[player].pos.y, playerData[player].y, delta*10)
+        players[player].pos.z = lerp(players[player].pos.z, playerData[player].z, delta*10)
+    }
+
 
     poses = []
     let x2 = 0
@@ -808,6 +829,12 @@ function update(timestamp) {
         }
         toMesh.splice(0, 1)
     }
+
+    data = {
+        x: Math.round(camera.pos.x*100)/100,
+        y: Math.round(camera.pos.y*100)/100,
+        z: Math.round(camera.pos.z*100)/100,
+    }
 }
 
 var sensitivity = 0.003
@@ -850,7 +877,7 @@ function raycast(pos, dir) {
 }
 
 function isColliding() {
-    return Math.sqrt(camera.pos.x**2 + camera.pos.y**2 + camera.pos.z**2) < 5 || collidingPoint(camera.pos.x, camera.pos.y, camera.pos.z, 0.4999)
+    return Math.sqrt(camera.pos.x**2 + camera.pos.y**2 + camera.pos.z**2) < 5 || collidingPoint(camera.pos.x, camera.pos.y, camera.pos.z, 0.495)
 }
 
 function collidingPoint(x, y, z, cutoff=0.5) {
