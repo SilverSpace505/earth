@@ -30,9 +30,9 @@ var sea = new webgl.Sphere(0, 0, 0, planetRadius, [0, 0.5, 1])
 sea.alpha = 0.7
 sea.order = true
 
-// var atmosphere = new webgl.Sphere(45, 45, 45, 60, [0, 0.5, 1])
-// atmosphere.alpha = 0.1
-// atmosphere.order = true
+var atmosphere = new webgl.Sphere(0, 0, 0, planetRadius * (Math.PI/2), [0, 0.5, 1])
+atmosphere.alpha = 0.1
+atmosphere.order = true
 
 var toMesh = []
 
@@ -272,9 +272,6 @@ function getMesh(chunk) {
                     // l2 *= Math.sqrt((wpos[1][0] - 50)**2 + (wpos[1][1] - 50)**2 + (wpos[1][2] - 50)**2)/div
                     // l3 *= Math.sqrt((wpos[2][0] - 50)**2 + (wpos[2][1] - 50)**2 + (wpos[2][2] - 50)**2)/div
                     // let s = 3
-                    l1 += noise.perlin3(wpos[0][0]/s, wpos[0][1]/s, wpos[0][2]/s) / 15
-                    l2 += noise.perlin3(wpos[1][0]/s, wpos[1][1]/s, wpos[1][2]/s) / 15
-                    l3 += noise.perlin3(wpos[2][0]/s, wpos[2][1]/s, wpos[2][2]/s) / 15
 
                     if (l1 < 0 || !l1) l1 = 0
                     if (l2 < 0 || !l2) l2 = 0
@@ -287,6 +284,11 @@ function getMesh(chunk) {
                     if (l1 > 1) l1 = 1
                     if (l2 > 1) l2 = 1
                     if (l3 > 1) l3 = 1
+
+                    let s2 = 3
+                    l1 += noise.perlin3(wpos[0][0]/s2, wpos[0][1]/s2, wpos[0][2]/s2) / 25
+                    l2 += noise.perlin3(wpos[1][0]/s2, wpos[1][1]/s2, wpos[1][2]/s2) / 25
+                    l3 += noise.perlin3(wpos[2][0]/s2, wpos[2][1]/s2, wpos[2][2]/s2) / 25
 
                     let c1 = getVT(wpos[0][0], wpos[0][1], wpos[0][2])[1]
                     let c2 = getVT(wpos[1][0], wpos[1][1], wpos[1][2])[1]
