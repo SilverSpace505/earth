@@ -14,7 +14,7 @@ function sendMsg(sendData, bypass=false) {
 }
 
 ws.addEventListener("open", (event) => {
-    sendMsg({connect: "earth"})
+    sendMsg({connect: "earth"}, true)
     ws.addEventListener("message", (event) => {
         let msg = JSON.parse(event.data)
         if ("connected" in msg) {
