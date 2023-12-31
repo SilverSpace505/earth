@@ -19,6 +19,7 @@ var gridSize = 10
 var planetRadius = 100
 
 var camera = {pos: {x: 0, y: planetRadius*(Math.PI/3) + 10, z: 0}, rot: {x: 0, y: 0, z: 0}}
+var trueRot = {x: 0, y: 0, z: 0}
 var player = {pos: {x: 0, y: 0, z: 0}, vel: {x: 0, y: 0, z: 0}}
 
 var test = new webgl.Sphere(0, 0, -1, 0.5, [1, 1, 1])
@@ -502,7 +503,7 @@ function update(timestamp) {
     // }
 
     camera.rot.y *= -1
-    let r = raycast(camera.pos, rotv3({x: 0, y: 0, z: -1}, {x: camera.rot.x, y: -camera.rot.y, z: camera.rot.z}))
+    let r = raycast(camera.pos, rotv3({x: 0, y: 0, z: -1}, {x: trueRot.x, y: trueRot.y, z: trueRot.z}))
     camera.rot.y *= -1
     test.visible = false
     if (r) {
@@ -633,6 +634,12 @@ function update(timestamp) {
 
         view = mat4Translation(view, vplayerPos)
         view = mat4EulerAngle(view, [camera.rot.x, camera.rot.y, camera.rot.z])
+
+        let ea = extractEulerAngles(view)
+        trueRot = {x: ea.phi, y: ea.theta, z: ea.psi}
+        // trueRot.x = Math.atan2(view[7], view[8])
+        // trueRot.y = Math.atan2(-view[6], Math.sqrt(1 - view[6] * view[6]))
+        // trueRot.z = Math.atan2(view[3], view[0])
 
         let angle = vec3Angle(lastGravl, gravl)
         let axis = vec3Axis(lastGravl, gravl)
@@ -858,7 +865,6 @@ input.mouseMove = (event) => {
 requestAnimationFrame(update)
 
 function raycast(pos, dir) {
-    return false
     let r
     let solves = []
     for (let chunk in world) {
@@ -991,125 +997,15 @@ meshMaker.onmessage = (event) => {
     cool.updateBuffers()
 }
 
-// Function to calculate the normal for a vertex
-function calculateVertexNormal(vertex, faceNormal, faceCenter) {
-    // Calculate the vector from the vertex to the face center
-    let vertexToFaceCenter = [
-        faceCenter[0] - vertex[0],
-        faceCenter[1] - vertex[1],
-        faceCenter[2] - vertex[2]
-    ]
-    // Project the vertex-to-face-center vector onto the face normal
-    let projectedVector = projectVector(vertexToFaceCenter, faceNormal);
-
-    // Subtract the projected vector from the vertex-to-face-center vector
-    let normal = subtractVectors(vertexToFaceCenter, projectedVector);
-
-    // Normalize the resulting vector to get the vertex normal
-    return normalizeVector(normal);
-}
-
-// Function to project a vector onto another vector
-function projectVector(v, onto) {
-    let scalar = dotProduct(v, onto) / dotProduct(onto, onto);
-    return multiplyVectorByScalar(onto, scalar);
-}
-
 // Function to subtract two vectors
 function subtractVectors(v1, v2) {
     return [v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]];
-}
-
-// Function to multiply a vector by a scalar
-function multiplyVectorByScalar(v, scalar) {
-    return [v[0] * scalar, v[1] * scalar, v[2] * scalar];
 }
 
 // Function to normalize a vector
 function normalizeVector(v) {
     let length = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     return [v[0] / length, v[1] / length, v[2] / length];
-}
-
-// Function to calculate the normal of a face given its vertices
-function calculateFaceNormal(vertices) {
-    // Ensure there are at least three vertices to form a face
-    if (vertices.length < 3) {
-      throw new Error('At least three vertices are required to calculate a face normal.');
-    }
-  
-    // Take the first three vertices to define the face
-    const a = vertices[0];
-    const b = vertices[1];
-    const c = vertices[2];
-  
-    // Calculate two vectors on the face
-    const vectorAB = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-    const vectorAC = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-  
-    // Calculate the cross product of the two vectors to get the face normal
-    const faceNormal = crossProduct(vectorAB, vectorAC);
-  
-    // Normalize the face normal
-    const length = Math.sqrt(
-      faceNormal[0] ** 2 +
-      faceNormal[1] ** 2 +
-      faceNormal[2] ** 2
-    );
-  
-    faceNormal[0] /= length;
-    faceNormal[1] /= length;
-    faceNormal[2] /= length;
-  
-    return faceNormal
-}
-
-// Function to calculate vertex normals
-function calculateVertexNormals(vertices, faceNormal) {
-    const vertexNormals = [];
-  
-    // Calculate the centroid of the face
-    const centroid = [
-      (vertices[0][0] + vertices[1][0] + vertices[2][0]) / 3,
-      (vertices[0][1] + vertices[1][1] + vertices[2][1]) / 3,
-      (vertices[0][2] + vertices[1][2] + vertices[2][2]) / 3,
-    ];
-  
-    // Calculate the normal for each vertex
-    for (let i = 0; i < vertices.length; i++) {
-      const vertex = vertices[i];
-  
-      // Calculate the vector from the vertex to the centroid
-      const vectorToCentroid = [
-        centroid[0] - vertex[0],
-        centroid[1] - vertex[1],
-        centroid[2] - vertex[2],
-      ];
-  
-      // Calculate the cross product of the face normal and the vector to the centroid
-      const crossProduct = [
-        faceNormal[1] * vectorToCentroid[2] - faceNormal[2] * vectorToCentroid[1],
-        faceNormal[2] * vectorToCentroid[0] - faceNormal[0] * vectorToCentroid[2],
-        faceNormal[0] * vectorToCentroid[1] - faceNormal[1] * vectorToCentroid[0],
-      ];
-  
-      // Normalize the result and add it to the list of vertex normals
-      const length = Math.sqrt(
-        crossProduct[0] * crossProduct[0] +
-        crossProduct[1] * crossProduct[1] +
-        crossProduct[2] * crossProduct[2]
-      );
-  
-      const normalizedNormal = [
-        crossProduct[0] / length,
-        crossProduct[1] / length,
-        crossProduct[2] / length,
-      ];
-  
-      vertexNormals.push(normalizedNormal);
-    }
-  
-    return vertexNormals;
 }
 
 function computeGradient(x, y, z, epsilon=1) {
@@ -1120,34 +1016,29 @@ function computeGradient(x, y, z, epsilon=1) {
     return [dx, dy, dz];
 }
 
-// Function to interpolate normals across the vertices of a face
-function interpolateNormals(vertices) {
-    const v0 = vertices[0];
-    const v1 = vertices[1];
-    const v2 = vertices[2];
-
-    let mid = [
-        (v0[0] + v1[0] + v2[0])/3,
-        (v0[1] + v1[1] + v2[1])/3,
-        (v0[2] + v1[2] + v2[2])/3
-    ]
-
-    // Calculate face normal
-    const faceNormal = normalizeVector(crossProduct(subtractVectors(v1, v0), subtractVectors(v2, v0)));
-
-    // Interpolate normals across the vertices
-    const interpolatedNormals = vertices.map(vertex => {
-        const weightedNormal = normalizeVector(addVectors(faceNormal, subtractVectors(vertex, mid)));
-        return weightedNormal;
-    });
-
-    return interpolatedNormals;
-}
-
 function vec3Angle(vector1, vector2) {
 	return Math.acos(dotProduct(normalizeVector(vector1), normalizeVector(vector2)))
 }
 
 function vec3Axis(vector1, vector2) {
 	return normalizeVector(crossProduct(vector1, vector2))
+}
+
+function extractEulerAngles(matrix) {
+    // Extract individual elements from the matrix
+    var m11 = matrix[0], m12 = matrix[1], m13 = matrix[2];
+    var m21 = matrix[4], m22 = matrix[5], m23 = matrix[6];
+    var m31 = matrix[8], m32 = matrix[9], m33 = matrix[10];
+
+    // Calculate Euler angles
+    var theta = Math.atan2(-m31, Math.sqrt(m11 * m11 + m21 * m21));
+    var phi = Math.atan2(m32, m33);
+    var psi = Math.atan2(m21, m11);
+
+    // Convert angles to degrees if needed
+    theta = theta * (180 / Math.PI);
+    phi = phi * (180 / Math.PI);
+    psi = psi * (180 / Math.PI);
+
+    return { phi: phi, theta: theta, psi: psi };
 }
