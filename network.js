@@ -1,6 +1,5 @@
 
-console.log("Connecting...")
-var ws = new WebSocket("wss://server.silverspace.online:443")
+var ws
 var connected = false
 
 var data = {x: 0, y: 0, z: 0}
@@ -29,8 +28,21 @@ function sendMsg(sendData, bypass=false) {
 	}
 }
 
-ws.addEventListener("open", (event) => {
-    sendMsg({connect: "earth"}, true)
+function connectToServer() {
+    console.log("Connecting...")
+    if (ws) {
+        if (ws.readyState == WebSocket.OPEN) {
+			ws.close()
+		}
+    }
+    connected = false
+    id = 0
+    ws = new WebSocket("wss://server.silverspace.online:443")
+
+    ws.addEventListener("open", (event) => {
+        sendMsg({connect: "earth"}, true)
+    })
+    
     ws.addEventListener("message", (event) => {
         let msg = JSON.parse(event.data)
         if ("connected" in msg) {
@@ -49,7 +61,14 @@ ws.addEventListener("open", (event) => {
             playerData = msg.data
         }
     })
-})
+
+    ws.addEventListener("close", (event) => {
+        console.log("Disconnected")
+        connectToServer()
+    })
+}
+
+connectToServer()
 
 setInterval(() => {
     sendMsg({data: data})
