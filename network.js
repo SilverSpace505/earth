@@ -39,6 +39,9 @@ ws.addEventListener("open", (event) => {
             id = msg.connected
             sendMsg({view: vid})
         }
+        if ("ping" in msg) {
+            sendMsg({ping: true})
+        }
         if ("views" in msg) {
             console.log(JSON.stringify(msg.views))
         }
