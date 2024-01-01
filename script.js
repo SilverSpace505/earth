@@ -400,6 +400,11 @@ function update(timestamp) {
     input.setGlobals()
     webgl.resizeCanvas()
 
+    if (wConnect && !document.hidden) {
+        connectToServer()
+        wConnect = false
+    }
+
     let pcp = {x: Math.floor(camera.pos.x / cs), y: Math.floor(camera.pos.y / cs), z: Math.floor(camera.pos.z / cs)}
 
     let start = new Date().getTime()

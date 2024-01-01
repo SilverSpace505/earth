@@ -28,6 +28,8 @@ function sendMsg(sendData, bypass=false) {
 	}
 }
 
+var wConnect = false
+
 function connectToServer() {
     console.log("Connecting...")
     if (ws) {
@@ -51,7 +53,7 @@ function connectToServer() {
             id = msg.connected
             sendMsg({view: vid})
         }
-        if ("ping" in msg) {
+        if ("ping" in msg && !document.hidden) {
             sendMsg({ping: true})
         }
         if ("views" in msg) {
@@ -64,7 +66,7 @@ function connectToServer() {
 
     ws.addEventListener("close", (event) => {
         console.log("Disconnected")
-        connectToServer()
+        wConnect = true
     })
 }
 
