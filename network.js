@@ -62,6 +62,22 @@ function connectToServer() {
         if ("data" in msg) {
             playerData = msg.data
         }
+        if ("chunk" in msg) {
+            if (msg.chunk[1]) {
+                // for (let set of msg.chunk[1]) {
+                //     addSetT(set[0], set[1], set[2], [set[3], set[4]])
+                // }
+                // let pos = msg.chunk[0].split(","); pos[0] = parseInt(pos[0]); pos[1] = parseInt(pos[1]); pos[2] = parseInt(pos[2])
+                // for (let off of offs) {
+                //     addToMesh((pos[0]+off[0])+","+(pos[1]+off[1])+","+(pos[2]+off[2]), false)
+                // }
+                // addToMesh(msg.chunk[0], false)
+                // sortMesh = true
+            }
+        }
+        if ("set" in msg) {
+            addSetT(msg.set[0], msg.set[1], msg.set[2], [msg.set[3], msg.set[4]], false)
+        }
     })
 
     ws.addEventListener("close", (event) => {

@@ -1,4 +1,90 @@
 importScripts("marchingCubes.js")
+importScripts("https://cdn.jsdelivr.net/npm/noisejs@2.1.0/index.min.js")
+importScripts("data.js")
+importScripts("utils.js")
+
+var chunks = {}
+var toMesh = []
+
+function getNearby(x, y, z) {
+    let nearby = []
+    if (x <= 0) nearby.push([-1, 0, 0])
+    if (x >= cs-1) nearby.push([1, 0, 0])
+    if (y <= 0) nearby.push([0, -1, 0])
+    if (y >= cs-1) nearby.push([0, 1, 0])
+    if (z <= 0) nearby.push([0, 0, -1])
+    if (z >= cs-1) nearby.push([0, 0, 1])
+    return nearby
+}
+
+function addToMesh(chunk) {
+    if (toMesh.includes(chunk)) {
+        toMesh.splice(toMesh.indexOf(chunk), 1)
+    }
+    toMesh.splice(0, 0, chunk)
+}
+
+self.onmessage = function(event) {
+    let msg = event.data
+
+    let pos = msg.chunk.split(",").map(v => parseInt(v))
+
+    if (!(msg.chunk in chunks)) {
+        chunks[msg.chunk] = genChunk(pos[0], pos[1], pos[2])
+    }
+
+    let nearby = []
+    for (let set of msg.sets) {
+        setVT(set[0], set[1], set[2], [set[3], set[4]])
+        let nearby2 = getNearby(set[0], set[1], set[2])
+        for (let off of nearby2) {
+            if (!nearby.includes(off)) {
+                nearby.push(off)
+            }
+        }
+    }
+
+    for (let off of offs) {
+        let c = (pos[0]+off[0])+","+(pos[1]+off[1])+","+(pos[2]+off[2])
+        if (!(c in chunks)) {
+            chunks[c] = genChunk(pos[0]+off[0], pos[1]+off[1], pos[2]+off[2])
+        }
+    }
+
+    for (let off of nearby) {
+        for (let off2 of offs) {
+            let c2 = (pos[0]+off[0]+off2[0])+","+(pos[1]+off[1]+off2[1])+","+(pos[2]+off[2]+off2[2])
+            if (!(c2 in chunks)) {
+                chunks[c2] = genChunk(pos[0]+off[0]+off2[0], pos[1]+off[1]+off2[1], pos[2]+off[2]+off2[2])
+            }
+        }
+        let c = (pos[0]+off[0])+","+(pos[1]+off[1])+","+(pos[2]+off[2])
+        addToMesh(c)
+    }
+
+    addToMesh(msg.chunk)
+}   
+
+setInterval(() => {
+    let start = new Date().getTime()
+    let did = false
+    let meshes = {}
+    while (toMesh.length > 0 && (!did || new Date().getTime() - start < 1000/100)) {
+        did = true
+        meshes[toMesh[0]] = getMesh(toMesh[0])
+        toMesh.splice(0, 1)
+    }
+    if (Object.keys(meshes).length > 0) {
+        self.postMessage(meshes)
+    }
+    // console.log(toMesh.length)
+}, 1000/100)
+
+
+
+
+
+
 
 var points = []
 var gridSize = 10
@@ -9,10 +95,10 @@ let smoothing = true
 
 var lightD = {x: -0.75, y: 1, z: -0.5}
 
-self.onmessage = function(event) {
-    points = event.data
-    self.postMessage(this.constructMesh())
-}
+// self.onmessage = function(event) {
+//     points = event.data
+//     self.postMessage(this.constructMesh())
+// }
 
 function normalv3(vec) {
     let length = Math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)
